@@ -6,9 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
-
   http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an
 "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,7 +24,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/openblockchain/obc-peer/openchain/chaincode/shim"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -39,6 +37,10 @@ var openTradesStr = "_opentrades"				//name for the key/value that will store al
 type Marble struct{
 	Name string `json:"name"`					//the fieldtags are needed to keep case from bouncing around
 	Color string `json:"color"`
+	FirstPartyName string `json:"fpn"`
+	SecondPartyName string `json:"spn"`
+	FirstPartyCNIC string `json:"fpnc"`
+	SecondPartyCNIC string `json:"spnc"`
 	Size int `json:"size"`
 	User string `json:"user"`
 }
@@ -56,7 +58,7 @@ func main() {
 // ============================================================================================================================
 // Init - reset all the things
 // ============================================================================================================================
-func (t *SimpleChaincode) init(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	var Aval int
 	var err error
 
@@ -82,19 +84,27 @@ func (t *SimpleChaincode) init(stub *shim.ChaincodeStub, args []string) ([]byte,
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return nil, nil
 }
 
 // ============================================================================================================================
-// Run - Our entry point
+// Run - Our entry point for Invocations - [LEGACY] obc-peer 4/25/2016
 // ============================================================================================================================
 func (t *SimpleChaincode) Run(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	fmt.Println("run is running " + function)
+	return t.Invoke(stub, function, args)
+}
+
+// ============================================================================================================================
+// Invoke - Our entry point for Invocations
+// ============================================================================================================================
+func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
 	if function == "init" {													//initialize the chaincode state, used as reset
-		return t.init(stub, args)
+		return t.Init(stub, "init", args)
 	} else if function == "delete" {										//deletes an entity from its state
 		return t.Delete(stub, args)
 	} else if function == "write" {											//writes a value to the chaincode state
@@ -104,7 +114,7 @@ func (t *SimpleChaincode) Run(stub *shim.ChaincodeStub, function string, args []
 	} else if function == "set_user" {										//change owner of a marble
 		return t.set_user(stub, args)
 	}
-	fmt.Println("run did not find func: " + function)						//error
+	fmt.Println("invoke did not find func: " + function)					//error
 
 	return nil, errors.New("Received unknown function invocation")
 }
@@ -213,8 +223,10 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 
 	//   0       1       2     3
 	// "asdf", "blue", "35", "bob"
-	if len(args) != 4 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 4")
+	//	0		1		2		3		4		5		6
+	//	"name"	"fpn"	"spn"	"fpnc"	"spnc"	"size"	"user"
+	if len(args) != 7 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 7")
 	}
 
 	fmt.Println("- start init marble")
@@ -230,16 +242,31 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 	if len(args[3]) <= 0 {
 		return nil, errors.New("4th argument must be a non-empty string")
 	}
+	if len(args[4]) <= 0 {
+		return nil, errors.New("5th argument must be a non-empty string")
+	}
+	if len(args[5]) <= 0 {
+		return nil, errors.New("6th argument must be a non-empty string")
+	}
+	if len(args[6]) <= 0 {
+		return nil, errors.New("7th argument must be a non-empty string")
+	}		
 	
-	size, err := strconv.Atoi(args[2])
+	size, err := strconv.Atoi(args[5])
 	if err != nil {
-		return nil, errors.New("3rd argument must be a numeric string")
+		return nil, errors.New("6th argument must be a numeric string")
 	}
 	
-	color := strings.ToLower(args[1])
-	user := strings.ToLower(args[3])
+	//color := strings.ToLower(args[1])
+	//user := strings.ToLower(args[3])
+	fpn := strings.ToLower(args[1])
+	spn := strings.ToLower(args[2])
+	fpnc := strings.ToLower(args[3])
+	spnc := strings.ToLower(args[4])
+	size := strings.ToLower(args[5])
+	user := strings.ToLower(args[6])
 
-	str := `{"name": "` + args[0] + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `"}`
+	str := `{"name": "` + args[0] + `", "fpn": "` + fpn + `", "spn": "` + spn + `", "fpnc": "` + fpnc +`", "spnc": "` + spnc + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `"}`
 	err = stub.PutState(args[0], []byte(str))								//store marble with id as key
 	if err != nil {
 		return nil, err
@@ -283,7 +310,12 @@ func (t *SimpleChaincode) set_user(stub *shim.ChaincodeStub, args []string) ([]b
 	}
 	res := Marble{}
 	json.Unmarshal(marbleAsBytes, &res)										//un stringify it aka JSON.parse()
-	res.User = args[1]														//change the user
+	res.User = args[1] //this is state
+	res.FirstPartyName = args[2]
+	res.SecondPartyName = args[3]
+	res.FirstPartyCNIC = args[4]
+	res.SecondPartyCNIC = args[5]
+	res.Size = args[6]										//change the user
 	
 	jsonAsBytes, _ := json.Marshal(res)
 	err = stub.PutState(args[0], jsonAsBytes)								//rewrite the marble with id as key
