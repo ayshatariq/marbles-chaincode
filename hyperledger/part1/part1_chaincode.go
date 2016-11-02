@@ -263,7 +263,7 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 	spn := strings.ToLower(args[2])
 	fpnc := strings.ToLower(args[3])
 	spnc := strings.ToLower(args[4])
-	size := strings.ToLower(args[5])
+	size = strings.ToLower(args[5])
 	user := strings.ToLower(args[6])
 
 	str := `{"name": "` + args[0] + `", "fpn": "` + fpn + `", "spn": "` + spn + `", "fpnc": "` + fpnc +`", "spnc": "` + spnc + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `"}`
