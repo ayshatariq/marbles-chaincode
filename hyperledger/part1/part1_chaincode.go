@@ -314,7 +314,12 @@ func (t *SimpleChaincode) set_user(stub *shim.ChaincodeStub, args []string) ([]b
 	res.SecondPartyName = args[3]
 	res.FirstPartyCNIC = args[4]
 	res.SecondPartyCNIC = args[5]
-	res.Size = args[6]										//change the user
+	
+	size, err := strconv.Atoi(args[6])
+	if err != nil {
+		return nil, errors.New("6th argument must be a numeric string")
+	}
+	res.Size = size										//change the user
 	
 	jsonAsBytes, _ := json.Marshal(res)
 	err = stub.PutState(args[0], jsonAsBytes)								//rewrite the marble with id as key
