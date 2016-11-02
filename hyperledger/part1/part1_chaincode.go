@@ -6,9 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
-
   http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an
 "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,6 +37,10 @@ var openTradesStr = "_opentrades"				//name for the key/value that will store al
 type Marble struct{
 	Name string `json:"name"`					//the fieldtags are needed to keep case from bouncing around
 	Color string `json:"color"`
+	FirstPartyName string `json:"fpn"`
+	SecondPartyName string `json:"spn"`
+	FirstPartyCNIC string `json:"fpnc"`
+	SecondPartyCNIC string `json:"spnc"`
 	Size int `json:"size"`
 	User string `json:"user"`
 }
@@ -221,8 +223,10 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 
 	//   0       1       2     3
 	// "asdf", "blue", "35", "bob"
-	if len(args) != 4 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 4")
+	//	0		1		2		3		4		5		6
+	//	"name"	"fpn"	"spn"	"fpnc"	"spnc"	"size"	"user"
+	if len(args) != 7 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 7")
 	}
 
 	fmt.Println("- start init marble")
@@ -238,16 +242,31 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 	if len(args[3]) <= 0 {
 		return nil, errors.New("4th argument must be a non-empty string")
 	}
+	if len(args[4]) <= 0 {
+		return nil, errors.New("5th argument must be a non-empty string")
+	}
+	if len(args[5]) <= 0 {
+		return nil, errors.New("6th argument must be a non-empty string")
+	}
+	if len(args[6]) <= 0 {
+		return nil, errors.New("7th argument must be a non-empty string")
+	}		
 	
-	size, err := strconv.Atoi(args[2])
+	size, err := strconv.Atoi(args[5])
 	if err != nil {
-		return nil, errors.New("3rd argument must be a numeric string")
+		return nil, errors.New("6th argument must be a numeric string")
 	}
 	
-	color := strings.ToLower(args[1])
-	user := strings.ToLower(args[3])
+	//color := strings.ToLower(args[1])
+	//user := strings.ToLower(args[3])
+	fpn := strings.ToLower(args[1])
+	spn := strings.ToLower(args[2])
+	fpnc := strings.ToLower(args[3])
+	spnc := strings.ToLower(args[4])
+	size := strings.ToLower(args[5])
+	user := strings.ToLower(args[6])
 
-	str := `{"name": "` + args[0] + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `"}`
+	str := `{"name": "` + args[0] + `", "fpn": "` + fpn + `", "spn": "` + spn + `", "fpnc": "` + fpnc +`", "spnc": "` + spnc + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `"}`
 	err = stub.PutState(args[0], []byte(str))								//store marble with id as key
 	if err != nil {
 		return nil, err
@@ -291,7 +310,12 @@ func (t *SimpleChaincode) set_user(stub *shim.ChaincodeStub, args []string) ([]b
 	}
 	res := Marble{}
 	json.Unmarshal(marbleAsBytes, &res)										//un stringify it aka JSON.parse()
-	res.User = args[1]														//change the user
+	res.User = args[1] //this is state
+	res.FirstPartyName = args[2]
+	res.SecondPartyName = args[3]
+	res.FirstPartyCNIC = args[4]
+	res.SecondPartyCNIC = args[5]
+	res.Size = args[6]										//change the user
 	
 	jsonAsBytes, _ := json.Marshal(res)
 	err = stub.PutState(args[0], jsonAsBytes)								//rewrite the marble with id as key
