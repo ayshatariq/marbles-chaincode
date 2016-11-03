@@ -309,13 +309,13 @@ func (t *SimpleChaincode) set_state(stub *shim.ChaincodeStub, args []string) ([]
 	}
 	res := Marble{}
 	json.Unmarshal(marbleAsBytes, &res)										//un stringify it aka JSON.parse()
-	res.State = args[1] //this is state
-	res.FirstPartyName = args[2]
-	res.SecondPartyName = args[3]
-	res.FirstPartyCNIC = args[4]
-	res.SecondPartyCNIC = args[5]
+	res.State = args[6] //this is state
+	res.FirstPartyName = args[1]
+	res.SecondPartyName = args[2]
+	res.FirstPartyCNIC = args[3]
+	res.SecondPartyCNIC = args[4]
 	
-	amount, err := strconv.Atoi(args[6])
+	amount, err := strconv.Atoi(args[5])
 	if err != nil {
 		return nil, errors.New("6th argument must be a numeric string")
 	}
