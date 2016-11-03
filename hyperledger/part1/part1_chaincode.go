@@ -265,7 +265,7 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 	spnc := strings.ToLower(args[4])
 	state := strings.ToLower(args[6])
 
-	str := `{"name": "` + args[0] + `", "fpn": "` + fpn + `", "spn": "` + spn + `", "fpnc": "` + fpnc +`", "spnc": "` + spnc + `", "amount": ` + amount + `, "state": "` + state + `"}`
+	str := `{"name": "` + args[0] + `", "fpn": "` + fpn + `", "spn": "` + spn + `", "fpnc": "` + fpnc +`", "spnc": "` + spnc + `", "amount": ` + strconv.Atoi(args[5]) + `, "state": "` + state + `"}`
 	err = stub.PutState(args[0], []byte(str))								//store marble with id as key
 	if err != nil {
 		return nil, err
