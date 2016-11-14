@@ -58,7 +58,7 @@ func main() {
 // ============================================================================================================================
 // Init - reset all the things
 // ============================================================================================================================
-func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	var Aval int
 	var err error
 
@@ -77,7 +77,7 @@ func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args [
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var empty []string
 	jsonAsBytes, _ := json.Marshal(empty)								//marshal an emtpy array of strings to clear the index
 	err = stub.PutState(marbleIndexStr, jsonAsBytes)
@@ -91,7 +91,7 @@ func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args [
 // ============================================================================================================================
 // Run - Our entry point for Invocations - [LEGACY] obc-peer 4/25/2016
 // ============================================================================================================================
-func (t *SimpleChaincode) Run(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Run(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("run is running " + function)
 	return t.Invoke(stub, function, args)
 }
@@ -99,7 +99,7 @@ func (t *SimpleChaincode) Run(stub *shim.ChaincodeStub, function string, args []
 // ============================================================================================================================
 // Invoke - Our entry point for Invocations
 // ============================================================================================================================
-func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
@@ -122,7 +122,7 @@ func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args
 // ============================================================================================================================
 // Query - Our entry point for Queries
 // ============================================================================================================================
-func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
@@ -137,7 +137,7 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 // ============================================================================================================================
 // Read - read a variable from chaincode state
 // ============================================================================================================================
-func (t *SimpleChaincode) read(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var name, jsonResp string
 	var err error
 
@@ -158,11 +158,11 @@ func (t *SimpleChaincode) read(stub *shim.ChaincodeStub, args []string) ([]byte,
 // ============================================================================================================================
 // Delete - remove a key/value pair from state
 // ============================================================================================================================
-func (t *SimpleChaincode) Delete(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Delete(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
 	}
-	
+
 	name := args[0]
 	err := stub.DelState(name)													//remove the key from chaincode state
 	if err != nil {
@@ -176,7 +176,7 @@ func (t *SimpleChaincode) Delete(stub *shim.ChaincodeStub, args []string) ([]byt
 	}
 	var marbleIndex []string
 	json.Unmarshal(marblesAsBytes, &marbleIndex)								//un stringify it aka JSON.parse()
-	
+
 	//remove marble from index
 	for i,val := range marbleIndex{
 		fmt.Println(strconv.Itoa(i) + " - looking at " + val + " for " + name)
@@ -197,7 +197,7 @@ func (t *SimpleChaincode) Delete(stub *shim.ChaincodeStub, args []string) ([]byt
 // ============================================================================================================================
 // Write - write variable into chaincode state
 // ============================================================================================================================
-func (t *SimpleChaincode) Write(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var name, value string // Entities
 	var err error
 	fmt.Println("running write()")
@@ -218,7 +218,7 @@ func (t *SimpleChaincode) Write(stub *shim.ChaincodeStub, args []string) ([]byte
 // ============================================================================================================================
 // Init Marble - create a new marble, store into chaincode state
 // ============================================================================================================================
-func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func (t *SimpleChaincode) init_marble(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
 
 	//   0       1       2     3
@@ -250,13 +250,13 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 	}
 	if len(args[6]) <= 0 {
 		return nil, errors.New("7th argument must be a non-empty string")
-	}		
-	
+	}
+
 	amount, err := strconv.Atoi(args[5])
 	if err != nil {
 		return nil, errors.New("6th argument must be a numeric string")
 	}
-	
+
 	//color := strings.ToLower(args[1])
 	//state := strings.ToLower(args[3])
 	fpn := strings.ToLower(args[1])
@@ -270,7 +270,7 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 	if err != nil {
 		return nil, err
 	}
-		
+
 	//get the marble index
 	marblesAsBytes, err := stub.GetState(marbleIndexStr)
 	if err != nil {
@@ -278,7 +278,7 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 	}
 	var marbleIndex []string
 	json.Unmarshal(marblesAsBytes, &marbleIndex)							//un stringify it aka JSON.parse()
-	
+
 	//append
 	marbleIndex = append(marbleIndex, args[0])								//add marble name to index list
 	fmt.Println("! marble index: ", marbleIndex)
@@ -292,15 +292,15 @@ func (t *SimpleChaincode) init_marble(stub *shim.ChaincodeStub, args []string) (
 // ============================================================================================================================
 // Set State Permission on Marble
 // ============================================================================================================================
-func (t *SimpleChaincode) set_state(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func (t *SimpleChaincode) set_state(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
-	
+
 	//   0       1
 	// "name", "bob"
 	if len(args) < 2 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 2")
 	}
-	
+
 	fmt.Println("- start set state")
 	fmt.Println(args[0] + " - " + args[1])
 	marbleAsBytes, err := stub.GetState(args[0])
@@ -314,19 +314,19 @@ func (t *SimpleChaincode) set_state(stub *shim.ChaincodeStub, args []string) ([]
 	res.SecondPartyName = args[2]
 	res.FirstPartyCNIC = args[3]
 	res.SecondPartyCNIC = args[4]
-	
+
 	amount, err := strconv.Atoi(args[5])
 	if err != nil {
 		return nil, errors.New("6th argument must be a numeric string")
 	}
 	res.Amount = amount										//change the state
-	
+
 	jsonAsBytes, _ := json.Marshal(res)
 	err = stub.PutState(args[0], jsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
 		return nil, err
 	}
-	
+
 	fmt.Println("- end set state")
 	return nil, nil
 }
